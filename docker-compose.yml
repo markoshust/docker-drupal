@@ -1,0 +1,47 @@
+version: "3"
+
+services:
+  web:
+    build: docker/nginx
+    ports:
+      - 8000:80
+    volumes:
+      - ./www:/srv/www
+    networks:
+      - www
+    depends_on:
+      - phpfpm
+
+  phpfpm:
+    build: docker/phpfpm
+    volumes:
+      - ./www:/srv/www
+    networks:
+      - www
+    env_file: docker/phpfpm/.env
+    depends_on:
+      - mysql
+
+  setup:
+    image: composer
+    volumes:
+      - ./www:/srv/www
+    networks:
+      - www
+    command: composer create-project drupal-composer/drupal-project:8.x-dev /srv/www --stability dev --no-interaction
+
+  mysql:
+    image: percona
+    ports:
+      - 33060:3306
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - www
+    env_file: docker/mysql/.env
+
+volumes:
+  dbdata:
+
+networks:
+  www:
